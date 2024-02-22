@@ -1,0 +1,7 @@
+﻿namespace Copy_1_NationalParkAPI_1031
+{
+    public class AppSettings
+    {
+        public string Secret { get; set; }
+    }
+}

@@ -1,0 +1,232 @@
+﻿@model Copy_1_NationalParkWebAPI_1031.Models.ViewModels.BookingTripVM
+@using Copy_1_NationalParkWebAPI_1031;
+@using Microsoft.Extensions.Options
+@inject IOptions<Copy_1_NationalParkWebAPI_1031.StripeSettings> stripe;
+
+@{
+    ViewData["Title"] = "BookingTrip";
+}
+<style>
+    body {
+        color: #000;
+        overflow-x: hidden;
+        height: 100%;
+        background-image: url("https://i.imgur.com/GMmCQHC.png");
+        background-repeat: no-repeat;
+        background-size: 100% 100%;
+    }
+
+    .card {
+        padding: 30px 40px;
+        margin-top: 60px;
+        margin-bottom: 60px;
+        border: none !important;
+        box-shadow: 0 6px 12px 0 rgba(0, 0, 0, 0.2);
+    }
+
+    .blue-text {
+        color: #00BCD4;
+    }
+
+    .form-control-label {
+        margin-bottom: 0;
+    }
+
+    input,
+    textarea,
+    button {
+        padding: 8px 15px;
+        border-radius: 5px !important;
+        margin: 5px 0px;
+        box-sizing: border-box;
+        border: 1px solid #ccc;
+        font-size: 18px !important;
+        font-weight: 300;
+    }
+
+        input:focus,
+        textarea:focus {
+            -moz-box-shadow: none !important;
+            -webkit-box-shadow: none !important;
+            box-shadow: none !important;
+            border: 1px solid #00BCD4;
+            outline-width: 0;
+            font-weight: 400;
+        }
+
+    .btn-block {
+        text-transform: uppercase;
+        font-size: 15px !important;
+        font-weight: 400;
+        height: 43px;
+        cursor: pointer;
+    }
+
+        .btn-block:hover {
+            color: #fff !important;
+        }
+
+    button:focus {
+        -moz-box-shadow: none !important;
+        -webkit-box-shadow: none !important;
+        box-shadow: none !important;
+        outline-width: 0;
+    }
+</style>1
+<div class="container-fluid px-1 py-5 mx-auto">
+    <div class="row d-flex justify-content-center">
+        <div class="col-xl-7 col-lg-8 col-md-9 col-11 text-center">
+            <div class="card">
+                <h5 class="text-center mb-4">This trip is free from <strong class="bg-info">CS Soft Solution</strong></h5>
+                <form method="post" asp-action="BookingTrip">
+                    <div asp-validation-summary="ModelOnly" class="text-black"></div>
+                    
+                    <!-- Hidden input for the trip ID -->
+                    <input type="hidden" asp-for="@Model.BookingTrip.Id" />
+
+                    <!-- Personal Information -->
+                    <div class="row justify-content-between text-left">
+                        <div class="form-group col-sm-6 flex-column d-flex">
+                            <label class="form-control-label px-3">First name<span class="text-danger"> *</span></label>
+                            <input asp-for="BookingTrip.Name" type="text" placeholder="Enter your name" required />
+                        </div>
+
+                        <div class="form-group col-sm-6 flex-column d-flex">
+                            <label class="form-control-label px-3">Address<span class="text-danger"> *</span></label>
+                            <input asp-for="BookingTrip.Address" type="text" placeholder="Enter your Postal Code" required />
+                        </div>
+                    </div>
+
+                    <!-- Email and Phone -->
+                    <div class="row justify-content-between text-left">
+                        <div class="form-group col-sm-6 flex-column d-flex">
+                            <label class="form-control-label px-3">Email Address<span class="text-danger"> *</span></label>
+                            <input asp-for="BookingTrip.Email" type="email" placeholder="Enter your Email Address" required />
+                        </div>
+
+                        <div class="form-group col-sm-6 flex-column d-flex">
+                            <label class="form-control-label px-3">Phone number<span class="text-danger"> *</span></label>
+                            <input asp-for="BookingTrip.PhoneNumber" type="number" required pattern="[0-9]{10}" placeholder="Enter your 10 digit Number" required />
+                        </div>
+                    </div>
+
+                    <!-- Date, Children, and Adults -->
+                    <div class="row justify-content-between text-left">
+                        <div class="form-group col-sm-6 flex-column d-flex">
+                            <label class="form-control-label px-3">Select Date for Trip<span class="text-danger"> *</span></label>
+                            <input asp-for="BookingTrip.BookingForDate" type="date" placeholder="Enter Date here" required />
+                        </div>
+
+                        <div class="form-group col-sm-6 flex-column d-flex">
+                            <label class="form-control-label px-3">Number of Children <span class="text-danger"> *</span></label>
+                            <input asp-for="BookingTrip.Children" type="number" placeholder="Children" required />
+                        </div>
+                    </div>
+
+                    <!-- Adults and Total People -->
+                    <div class="row justify-content-between text-left">
+                        <div class="form-group col-sm-6 flex-column d-flex">
+                            <label class="form-control-label px-3">Number of Adults <span class="text-danger"> *</span></label>
+                            <input asp-for="BookingTrip.Adults" type="number" required pattern="[0-9]{10}" placeholder="Adults" required />
+                        </div>
+
+                        <div class="form-group col-sm-6 flex-column d-flex">
+                            <label class="form-control-label px-3">Total People <span class="text-danger"> *</span></label>
+                            <output class="blue-text fw-bold" id="totalPeopleOutput" required></output>
+                        </div>
+                    </div>
+
+                    <!-- Dropdown List for Park And Trail -->
+                    <div class="row justify-content-between text-left">
+                        <div class="form-group col-sm-6 flex-column d-flex">
+                            <label asp-for="Trail.Id" class="form-control-label px-3">Select Trail<span class="text-danger"> *</span></label>
+                            @Html.DropDownListFor(m => m.Trail.Id, Model.TrailList, "Select Trail Park", new { @class = "form-control"  })
+                            <span asp-validation-for="Trail.Id" class="text-danger"></span>
+                        </div>
+
+                        <!-- Total Price -->
+                        <div class="form-group col-sm-6 flex-column d-flex">
+                            <label class="form-control-label px-3">Total price<span class="text-danger"> *</span></label>
+                            <input id="totalPrice" asp-for="BookingTrip.TotalPrice" type="number" readonly placeholder="Total Price" required />
+                        </div>
+                    </div>
+                  
+                    <script src="https://checkout.stripe.com/checkout.js"
+                            class="stripe-button"
+                            data-key="@stripe.Value.Publishablekey"
+                            data-amount="TotalPrice"
+                            data-name="Book Shopping Project"
+                            data-description="Get Book For Testing"
+                            data-local="auto"
+                            data-lable="Place Order"
+                            data-allow-remeb
+                            er-me="false"
+                            data-image="https://stripe.com/img/documentation/checkout/marketplace.png">
+                    </script>
+                    <script>
+                        var el = document.getElementsByClassName('stripe-button-el');
+                        el[0].style.display = "none";
+                    </script>
+                   
+                    <!-- Submit Button -->
+                    <div class="row justify-content-end">
+                        <div class="form-group col-sm-6">
+                            <button type="submit" value="Place Order" class="btn btn-primary">Confirm Trip</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts
+{
+    <partial name="_validationScriptsPartial" />
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            // Get references to the input fields
+            var childrenInput = document.querySelector('input[name="BookingTrip.Children"]');
+            var adultsInput = document.querySelector('input[name="BookingTrip.Adults"]');
+
+            // Get reference to the total price input field
+            var totalPriceInput = document.getElementById('totalPrice');
+
+            // Function to update total price
+            function updateTotalPrice() {
+                var numberOfChildren = parseInt(childrenInput.value) || 0;
+                var numberOfAdults = parseInt(adultsInput.value) || 0;
+
+                // Calculate total price
+                var totalPrice = (numberOfChildren * @SD.ChildrenTicketPrice) + (numberOfAdults * @SD.AdultTicketPrice);
+
+                // Update the total price input field
+                totalPriceInput.value = totalPrice;
+            }
+
+            // Attach event listeners to input fields
+            childrenInput.addEventListener('input', updateTotalPrice);
+            adultsInput.addEventListener('input', updateTotalPrice);
+        });
+    </script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            // Get references to the input fields
+            var childrenInput = document.querySelector('input[name="BookingTrip.Children"]');
+            var adultsInput = document.querySelector('input[name="BookingTrip.Adults"]');
+
+            // Get reference to the output field
+            var totalPeopleOutput = document.getElementById('totalPeopleOutput');
+
+            // Function to update total
+            function updateTotal() {
+                var totalPeople = parseInt(childrenInput.value || 0) + parseInt(adultsInput.value || 0);
+                totalPeopleOutput.value = totalPeople;
+            }
+
+            // Attach event listeners to input fields
+            childrenInput.addEventListener('input', updateTotal);
+            adultsInput.addEventListener('input', updateTotal);
+        });
+    </script>
+}
